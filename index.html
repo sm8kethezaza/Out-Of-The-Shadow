@@ -3,24 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Out of the Shadow</title>
+    <title>Out of the Shadow | CPE 494</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <div id="flash-overlay"></div>
+    
     <div id="app">
         <header>
-            <div id="progression-bar">
-                <div id="progression-fill"></div>
+            <button id="home-btn" class="icon-btn">🏠 Home/Settings</button>
+            <div id="progression-container">
+                <div id="progression-bar">
+                    <div id="progression-fill"></div>
+                </div>
+                <div id="score-text">Level: 3/10</div>
             </div>
-            <div id="score-text">Cave Depth: 0</div>
         </header>
 
         <main id="screens">
             <!-- Start Screen -->
             <section id="start-screen" class="screen active">
                 <h1>Out of the Shadow</h1>
-                <p>Welcome to Plato's Cave. Can you distinguish Truth from Media Myth?</p>
+                <p>CPE 494: Digital Creativity & Rethinking Interaction.</p>
+                <p>Welcome to Plato's Cave. Can you distinguish geopolitical Truth from Media Myth?</p>
                 <button id="start-btn" class="btn primary">Enter the Cave</button>
             </section>
 
@@ -41,24 +47,27 @@
                                 <p id="statement-text">Statement goes here...</p>
                             </div>
                             <div class="card-back">
-                                <h2 id="result-title">Correct!</h2>
-                                <p id="explanation-text">Explanation goes here...</p>
-                                <button id="next-btn" class="btn secondary">Next</button>
+                                <h2 id="result-title">Feedback</h2>
+                                <div class="debriefing-box">
+                                    <span class="debriefing-label">GEOPOLITICAL DEBRIEFING:</span>
+                                    <p id="explanation-text">Explanation goes here...</p>
+                                </div>
+                                <button id="next-btn" class="btn secondary">Next Challenge</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="actions">
-                    <button id="btn-shadow" class="btn shadow-btn">Shadow (False)</button>
-                    <button id="btn-truth" class="btn truth-btn">Truth (True)</button>
+                    <button id="btn-shadow" class="btn shadow-btn">Shadow (Myth)</button>
+                    <button id="btn-truth" class="btn truth-btn">Truth (Fact)</button>
                 </div>
             </section>
 
             <!-- End Screen -->
             <section id="end-screen" class="screen">
-                <h1 id="end-title">You Reached the Light!</h1>
-                <p id="end-message">You have escaped the cave of ignorance.</p>
+                <h1 id="end-title">Game Over</h1>
+                <p id="end-message">Outcome message.</p>
                 <button id="restart-btn" class="btn primary">Play Again</button>
             </section>
         </main>

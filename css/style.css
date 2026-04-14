@@ -5,14 +5,14 @@
     --kahoot-blue: #1368ce;
     --kahoot-green: #26890c;
     --kahoot-yellow: #d89e00;
-    --bg-dark: #120524; /* Deep Shadow */
-    --bg-light: #fdfdfd; /* Bright Light */
+    --bg-dark: #0a0212; /* Pitch Black for Ignorance */
+    --bg-light: #ffffff; /* Pure White for Truth */
 }
 
 body {
     margin: 0;
     font-family: 'Montserrat', sans-serif;
-    background-color: var(--kahoot-purple); /* Starts in the middle */
+    background-color: var(--bg-dark); /* Starts dark, updated via JS */
     color: white;
     transition: background-color 1s ease, color 1s ease;
     overflow: hidden;
@@ -23,40 +23,89 @@ body {
     flex-direction: column;
     height: 100vh;
     width: 100vw;
+    position: relative;
+    z-index: 2;
 }
 
+/* Flash Overlay */
+#flash-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 9999;
+    transition: opacity 0.3s ease-out;
+}
+
+.flash-green { background-color: rgba(38, 137, 12, 0.6); opacity: 1 !important; }
+.flash-red { background-color: rgba(226, 27, 60, 0.6); opacity: 1 !important; }
+
+/* Header & Home Button */
 header {
     padding: 20px;
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
     align-items: center;
-    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
     z-index: 10;
 }
 
+.icon-btn {
+    background: rgba(0,0,0,0.3);
+    border: 2px solid rgba(255,255,255,0.5);
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.icon-btn:hover {
+    background: rgba(0,0,0,0.6);
+}
+
+#progression-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-right: 120px; /* Balance the Home button width */
+}
+
 #progression-bar {
-    width: 80%;
-    max-width: 600px;
-    height: 20px;
-    background: rgba(128, 128, 128, 0.4);
-    border-radius: 10px;
+    width: 100%;
+    max-width: 400px;
+    height: 25px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
     overflow: hidden;
     position: relative;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
 }
 
 #progression-fill {
     height: 100%;
-    width: 50%; /* Starts at 50% */
-    background: linear-gradient(90deg, var(--kahoot-red), var(--kahoot-yellow), var(--kahoot-green));
-    transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    width: 30%; /* Starts at level 3/10 */
+    background: linear-gradient(90deg, var(--kahoot-purple), var(--kahoot-light-purple), #e0b0ff);
+    transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.5s;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.2);
 }
 
 #score-text {
-    font-weight: 700;
-    font-size: 1.1rem;
+    font-weight: 900;
+    font-size: 1.2rem;
+    margin-top: 5px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 
+/* Screens */
 .screen {
     display: none;
     flex: 1;
@@ -78,29 +127,32 @@ h1 {
     text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
+/* Buttons */
 .btn {
     font-family: 'Montserrat', sans-serif;
     font-size: 1.2rem;
-    font-weight: 700;
+    font-weight: 900;
     padding: 15px 30px;
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    box-shadow: 0 4px 0 rgba(0,0,0,0.2);
-    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+    transition: transform 0.1s, box-shadow 0.1s, filter 0.2s;
     margin: 10px;
     text-transform: uppercase;
 }
 
 .btn:active {
-    transform: translateY(4px);
+    transform: translateY(6px);
     box-shadow: none;
 }
 
-.primary { background-color: var(--kahoot-light-purple); color: white; }
-.secondary { background-color: var(--kahoot-blue); color: white; }
-.shadow-btn { background-color: var(--kahoot-red); color: white; width: 150px;}
-.truth-btn { background-color: var(--kahoot-green); color: white; width: 150px;}
+.btn:hover { filter: brightness(1.1); }
+
+.primary { background-color: var(--kahoot-purple); color: white; border: 2px solid white; }
+.secondary { background-color: var(--kahoot-blue); color: white; width: 100%; margin-top: 15px; }
+.shadow-btn { background-color: var(--kahoot-red); color: white; width: 180px; font-size: 1.1rem;}
+.truth-btn { background-color: var(--kahoot-green); color: white; width: 180px; font-size: 1.1rem;}
 
 .actions {
     display: flex;
@@ -108,11 +160,12 @@ h1 {
     margin-top: 20px;
 }
 
+/* Cards & Debriefing */
 .card-container {
     perspective: 1000px;
     width: 90%;
-    max-width: 600px;
-    height: 350px;
+    max-width: 700px;
+    height: 400px;
     margin: 10px 0;
 }
 
@@ -142,29 +195,50 @@ h1 {
     border-radius: 16px;
     background-color: white;
     color: #333;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
 }
 
 .card-front p {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     font-weight: 700;
     line-height: 1.4;
 }
 
 .card-back {
     transform: rotateY(180deg);
+    padding: 20px;
+    justify-content: space-between;
 }
 
 .card-back h2 {
-    font-size: 2rem;
-    margin-top: 0;
-    margin-bottom: 10px;
+    font-size: 2.2rem;
+    margin: 0;
 }
 
-.card-back p {
-    font-size: 1.1rem;
+.debriefing-box {
+    background: #f4f4f4;
+    border-left: 5px solid var(--kahoot-purple);
+    padding: 15px;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+}
+
+.debriefing-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 900;
+    color: var(--kahoot-purple);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+.debriefing-box p {
+    font-size: 1rem;
     line-height: 1.5;
-    margin-bottom: 20px;
+    margin: 0;
+    font-weight: 500;
 }
 
 /* Timer SVG */
@@ -204,4 +278,21 @@ h1 {
     transform: translate(-50%, -50%);
     font-size: 2rem;
     font-weight: 900;
+}
+
+/* End Animations */
+.win-anim {
+    animation: winPulse 2s infinite alternate;
+}
+@keyframes winPulse {
+    0% { filter: drop-shadow(0 0 20px rgba(255,255,255,0.8)); transform: scale(1); }
+    100% { filter: drop-shadow(0 0 50px rgba(255,255,255,1)); transform: scale(1.05); }
+}
+
+.lose-anim {
+    animation: loseFall 3s forwards;
+}
+@keyframes loseFall {
+    0% { transform: scale(1) translateY(0); opacity: 1; }
+    100% { transform: scale(0.5) translateY(200px); opacity: 0; filter: blur(10px); }
 }

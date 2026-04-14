@@ -1,21 +1,55 @@
-const maxScore = 5;
-const minScore = -5;
-let currentScore = 0;
+// Game Settings
+const maxLevel = 10;
+const minLevel = 0;
+let currentLevel = 3; // Starts in the dark
 let currentQuestionIndex = 0;
 let timer;
 let timeLeft = 10;
 let isAnswered = false;
 
-// We will shuffle the data
 let questions = [];
 
-const screens = {
-    start: document.getElementById('start-screen'),
-    game: document.getElementById('game-screen'),
-    end: document.getElementById('end-screen')
-};
+// Audio Context setup for immediate Web Audio feedback
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
 
+function initAudio() {
+    if (!audioCtx) audioCtx = new AudioContext();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playSound(type) {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    if (type === 'correct') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime); // High pitch
+        osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.2);
+    } else {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, audioCtx.currentTime); // Low buzz
+        osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.2);
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.3);
+    }
+}
+
+// UI Elements
 const UI = {
+    startScreen: document.getElementById('start-screen'),
+    gameScreen: document.getElementById('game-screen'),
+    endScreen: document.getElementById('end-screen'),
     progressionFill: document.getElementById('progression-fill'),
     scoreText: document.getElementById('score-text'),
     card: document.getElementById('card'),
@@ -24,20 +58,27 @@ const UI = {
     explanationText: document.getElementById('explanation-text'),
     timerText: document.getElementById('timer-text'),
     timerProgress: document.querySelector('.timer-progress'),
-    timerBg: document.querySelector('.timer-bg'),
     actions: document.querySelector('.actions'),
     nextBtn: document.getElementById('next-btn'),
     endTitle: document.getElementById('end-title'),
-    endMessage: document.getElementById('end-message')
+    endMessage: document.getElementById('end-message'),
+    flashOverlay: document.getElementById('flash-overlay')
 };
 
 function initGame() {
-    // Shuffle questions
+    initAudio();
+    // Shuffle the geopolitical dataset
     questions = [...quizData].sort(() => Math.random() - 0.5);
-    currentScore = 0;
+    currentLevel = 3;
     currentQuestionIndex = 0;
+    
+    // Reset animations
+    UI.endTitle.classList.remove('win-anim', 'lose-anim');
+    document.body.style.backgroundColor = 'var(--bg-dark)';
+    document.body.style.color = 'white';
+    
     updateProgressionUI();
-    showScreen('game');
+    showScreen(UI.gameScreen);
     loadQuestion();
 }
 
@@ -45,7 +86,7 @@ function loadQuestion() {
     isAnswered = false;
     UI.card.classList.remove('flipped');
     
-    // Slight delay to allow card to flip back before changing text
+    // Wait for flip animation before swapping text
     setTimeout(() => {
         const q = questions[currentQuestionIndex];
         UI.statementText.textContent = `"${q.statement}"`;
@@ -83,14 +124,18 @@ function handleAnswer(guess) {
     const q = questions[currentQuestionIndex];
     
     let isCorrect = (guess === q.isTrue);
-    if (guess === null) isCorrect = false; // Timeout
+    if (guess === null) isCorrect = false; 
+    
+    // Flash & Sound Feedback
+    triggerFlash(isCorrect);
+    playSound(isCorrect ? 'correct' : 'incorrect');
     
     if (isCorrect) {
-        currentScore++;
+        currentLevel++;
         UI.resultTitle.textContent = "Correct!";
         UI.resultTitle.style.color = "var(--kahoot-green)";
     } else {
-        currentScore--;
+        currentLevel--;
         UI.resultTitle.textContent = guess === null ? "Time's Up!" : "Incorrect!";
         UI.resultTitle.style.color = "var(--kahoot-red)";
     }
@@ -101,52 +146,55 @@ function handleAnswer(guess) {
     updateProgressionUI();
 }
 
+function triggerFlash(isCorrect) {
+    UI.flashOverlay.className = isCorrect ? 'flash-green' : 'flash-red';
+    setTimeout(() => {
+        UI.flashOverlay.className = '';
+    }, 400); // Overlay disappears after 400ms
+}
+
 function updateProgressionUI() {
-    // Score goes from -5 to +5. Map to 0% to 100%
-    const percentage = ((currentScore - minScore) / (maxScore - minScore)) * 100;
+    // Width percentage based on 0 to 10
+    const percentage = (currentLevel / maxLevel) * 100;
     UI.progressionFill.style.width = `${percentage}%`;
-    UI.scoreText.textContent = `Cave Depth: ${currentScore}`;
+    UI.scoreText.textContent = `Level: ${currentLevel}/${maxLevel}`;
     
-    // Platos Cave Metaphor: 
-    // -5 = Dark (#120524), 0 = Purple (#46178f), 5 = Light (#fdfdfd)
+    // Background color transitioning metaphor (Cave of Plato)
+    // Level 0: Black (#000000), Level 5: Kahoot Purple (#46178f), Level 10: White (#ffffff)
     let r, g, b;
-    if (currentScore <= 0) {
-        // Dark to Purple
-        const ratio = (currentScore - minScore) / (-minScore); // 0 to 1
-        r = Math.floor(18 + ratio * (52));   // #12 (18) to #46 (70)
-        g = Math.floor(5 + ratio * (18));    // #05 (5) to #17 (23)
-        b = Math.floor(36 + ratio * (107));  // #24 (36) to #8f (143)
-    } else {
-        // Purple to Light
-        const ratio = currentScore / maxScore; // 0 to 1
-        r = Math.floor(70 + ratio * (183));  // #46 (70) to #fd (253)
-        g = Math.floor(23 + ratio * (230));  // #17 (23) to #fd (253)
-        b = Math.floor(143 + ratio * (110)); // #8f (143) to #fd (253)
-    }
-    document.body.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
-    
-    // Change text color if background gets too bright (closer to Light)
-    if (currentScore >= 3) {
-        document.body.style.color = '#333';
-        UI.timerProgress.style.stroke = '#333';
-        if (UI.timerBg) UI.timerBg.style.stroke = 'rgba(0,0,0,0.2)';
-    } else {
+    if (currentLevel <= 5) {
+        const ratio = currentLevel / 5;
+        r = Math.floor(ratio * 70);   // 0 to 70 (#46)
+        g = Math.floor(ratio * 23);   // 0 to 23 (#17)
+        b = Math.floor(ratio * 143);  // 0 to 143 (#8f)
         document.body.style.color = 'white';
         UI.timerProgress.style.stroke = 'var(--kahoot-yellow)';
-        if (UI.timerBg) UI.timerBg.style.stroke = 'rgba(255,255,255,0.2)';
+        document.querySelector('.timer-bg').style.stroke = 'rgba(255,255,255,0.2)';
+    } else {
+        const ratio = (currentLevel - 5) / 5;
+        r = Math.floor(70 + ratio * 185);   // 70 to 255
+        g = Math.floor(23 + ratio * 232);   // 23 to 255
+        b = Math.floor(143 + ratio * 112);  // 143 to 255
+        
+        // At high levels, switch text color for readability
+        if (currentLevel >= 8) {
+            document.body.style.color = '#333';
+            UI.timerProgress.style.stroke = '#333';
+            document.querySelector('.timer-bg').style.stroke = 'rgba(0,0,0,0.2)';
+        }
     }
+    document.body.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
 }
 
 function nextQuestion() {
-    if (currentScore >= maxScore) {
+    if (currentLevel >= maxLevel) {
         endGame(true);
-    } else if (currentScore <= minScore) {
+    } else if (currentLevel <= minLevel) {
         endGame(false);
     } else {
         currentQuestionIndex++;
         if (currentQuestionIndex >= questions.length) {
-            // Loop questions if run out
-            currentQuestionIndex = 0;
+            currentQuestionIndex = 0; // Loop if needed
             questions = [...quizData].sort(() => Math.random() - 0.5);
         }
         loadQuestion();
@@ -154,28 +202,38 @@ function nextQuestion() {
 }
 
 function endGame(won) {
-    showScreen('end');
+    showScreen(UI.endScreen);
     if (won) {
-        UI.endTitle.textContent = "You Reached the Light!";
-        UI.endMessage.textContent = "Congratulations! You have escaped the cave of ignorance and disinformation.";
+        UI.endTitle.textContent = "Bravo, you have reached the Truth!";
+        UI.endTitle.classList.add('win-anim');
+        UI.endMessage.textContent = "You have successfully escaped the cave of disinformation and shattered the media myths.";
         document.body.style.backgroundColor = 'var(--bg-light)';
         document.body.style.color = '#333';
     } else {
-        UI.endTitle.textContent = "Lost in the Shadow...";
-        UI.endMessage.textContent = "You have succumbed to the illusions of the cave. The media myths have claimed you.";
+        UI.endTitle.textContent = "You have fallen into Ignorance...";
+        UI.endTitle.classList.add('lose-anim');
+        UI.endMessage.textContent = "The shadows of geopolitical manipulation have clouded your judgment.";
         document.body.style.backgroundColor = 'black';
         document.body.style.color = 'white';
     }
 }
 
-function showScreen(screenName) {
-    Object.values(screens).forEach(s => s.classList.remove('active'));
-    screens[screenName].classList.add('active');
+function showScreen(screenEl) {
+    UI.startScreen.classList.remove('active');
+    UI.gameScreen.classList.remove('active');
+    UI.endScreen.classList.remove('active');
+    screenEl.classList.add('active');
 }
 
 // Event Listeners
 document.getElementById('start-btn').addEventListener('click', initGame);
 document.getElementById('restart-btn').addEventListener('click', initGame);
+document.getElementById('home-btn').addEventListener('click', () => {
+    clearInterval(timer);
+    document.body.style.backgroundColor = 'var(--kahoot-purple)'; // Reset to generic purple for home
+    document.body.style.color = 'white';
+    showScreen(UI.startScreen);
+});
 document.getElementById('btn-truth').addEventListener('click', () => handleAnswer(true));
 document.getElementById('btn-shadow').addEventListener('click', () => handleAnswer(false));
 UI.nextBtn.addEventListener('click', nextQuestion);
