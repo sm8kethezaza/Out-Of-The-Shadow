@@ -237,7 +237,9 @@ function updateProgressionBar(newLevel, oldLevel) {
     // The track is inside #track-line which has top:40px, bottom:40px.
     // Calculate bottom percentage based on level.
     const ratio = newLevel / maxLevel;
-    UI.avatar.style.bottom = `calc(40px + ${ratio} * (100% - 80px))`;
+    const pct = ratio * 100;
+    const pxOffset = 40 - (ratio * 80);
+    UI.avatar.style.bottom = `calc(${pct}% + ${pxOffset}px)`;
     
     // Face character slightly to show expression
     if (newLevel > oldLevel) {

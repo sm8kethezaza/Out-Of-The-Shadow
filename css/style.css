@@ -174,7 +174,7 @@ header {
 
 #avatar {
     position: absolute;
-    bottom: calc(40px + 0.3 * (100% - 80px)); /* level 3 starts here */
+    bottom: calc(30% + 16px); /* Level 3: 30% and 40 - 0.3*80 = +16px */
     left: 50%;
     transform: translateX(-50%);
     font-size: 45px;
