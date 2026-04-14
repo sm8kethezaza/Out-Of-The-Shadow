@@ -83,6 +83,7 @@ const UI = {
     statementText: document.getElementById('statement-text'),
     resultTitle: document.getElementById('result-title'),
     explanationText: document.getElementById('explanation-text'),
+    timerContainer: document.querySelector('.timer-container'),
     timerText: document.getElementById('timer-text'),
     timerProgress: document.querySelector('.timer-progress'),
     actions: document.querySelector('.actions'),
@@ -103,7 +104,7 @@ function initGame() {
     // Reset animations
     UI.endTitle.classList.remove('win-anim', 'lose-anim');
     
-    // Apply Kahoot Purple theme initially or Cave theme
+    // Apply Cave theme
     applyLevelTheme(currentLevel);
     updateProgressionBar(currentLevel);
     
@@ -113,15 +114,19 @@ function initGame() {
 
 function loadQuestion() {
     isAnswered = false;
+    
+    // Fade out the explanation and fade in the new question
     UI.card.classList.remove('flipped');
     
-    // Wait for flip animation before swapping text
+    // Wait for fade transition before swapping text
     setTimeout(() => {
         const q = questions[currentQuestionIndex];
         UI.statementText.textContent = `"${q.statement}"`;
         UI.actions.style.display = 'flex';
+        UI.actions.style.opacity = '1';
+        UI.timerContainer.style.opacity = '1';
         startTimer();
-    }, 400); // Wait until the card has flipped completely to face front
+    }, 400); 
 }
 
 function startTimer() {
@@ -149,7 +154,13 @@ function handleAnswer(guess) {
     isAnswered = true;
     clearInterval(timer);
     
-    UI.actions.style.display = 'none';
+    // Hide buttons and timer smoothly
+    UI.actions.style.opacity = '0';
+    UI.timerContainer.style.opacity = '0';
+    setTimeout(() => {
+        UI.actions.style.display = 'none';
+    }, 300);
+
     const q = questions[currentQuestionIndex];
     
     let isCorrect = (guess === q.isTrue);
@@ -159,7 +170,7 @@ function handleAnswer(guess) {
     triggerFlash(isCorrect);
     playSound(isCorrect ? 'correct' : 'incorrect');
     
-    // Calculate pending level change, but DON'T apply it to the UI yet (Pedagogy)
+    // Calculate pending level change, but DON'T apply it to the UI yet
     pendingLevelChange = isCorrect ? 1 : -1;
     
     if (isCorrect) {
@@ -172,7 +183,7 @@ function handleAnswer(guess) {
     
     UI.explanationText.textContent = q.explanation;
     
-    // Flip the card to show the explanation, text is pre-rotated to be readable
+    // Fade out the question and fade in the explanation
     UI.card.classList.add('flipped');
 }
 
@@ -222,7 +233,7 @@ function updateProgressionBar(level) {
 }
 
 function processNextChallenge() {
-    // 1. User clicked "Next Question", now we update the level (Cave progression)
+    // 1. User clicked "Next Question", update the level
     currentLevel += pendingLevelChange;
     pendingLevelChange = 0;
     
@@ -230,7 +241,7 @@ function processNextChallenge() {
     updateProgressionBar(currentLevel);
     applyLevelTheme(currentLevel);
     
-    // 3. Wait a moment so the user sees the consequence (level up/down) before flipping
+    // 3. Wait a moment so the user sees the consequence (level up/down) before showing the next question
     setTimeout(() => {
         if (currentLevel >= maxLevel) {
             endGame(true);
@@ -242,7 +253,7 @@ function processNextChallenge() {
                 currentQuestionIndex = 0; // Loop if dataset exhausted
                 questions = [...quizData].sort(() => Math.random() - 0.5);
             }
-            loadQuestion(); // Flips card back and loads new text
+            loadQuestion(); // Fades out explanation, fades in new question
         }
     }, 1000); // 1 second delay to absorb the color and level change
 }

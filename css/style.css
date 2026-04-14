@@ -155,7 +155,7 @@ h1 {
 .btn:hover { filter: brightness(1.1); }
 
 .primary { background-color: var(--kahoot-purple); color: white; border: 2px solid white; }
-.secondary { background-color: var(--kahoot-blue); color: white; width: 100%; margin-top: 15px; }
+.secondary { background-color: var(--kahoot-blue); color: white; width: 100%; margin-top: 15px; font-size: 1.4rem; padding: 20px;}
 .shadow-btn { background-color: var(--kahoot-red); color: white; width: 180px; font-size: 1.1rem;}
 .truth-btn { background-color: var(--kahoot-green); color: white; width: 180px; font-size: 1.1rem;}
 
@@ -165,35 +165,28 @@ h1 {
     margin-top: 20px;
 }
 
-/* Cards & Debriefing */
+/* Cards & Debriefing - FADE TRANSITION INSTEAD OF 3D FLIP */
 .card-container {
-    perspective: 1000px;
     width: 90%;
     max-width: 700px;
     height: 400px;
     margin: 10px 0;
+    position: relative;
 }
 
 .card {
     width: 100%;
     height: 100%;
     position: relative;
-    transition: transform 0.8s cubic-bezier(0.4, 0.2, 0.2, 1);
-    transform-style: preserve-3d; /* CRITICAL for 3D flip */
-}
-
-/* Applying the flip */
-.card.flipped {
-    transform: rotateY(180deg);
 }
 
 /* Card Faces */
 .card-front, .card-back {
     position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    -webkit-backface-visibility: hidden; /* Fix for Safari */
-    backface-visibility: hidden; /* CRITICAL: Hides the back side of the face */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -204,23 +197,45 @@ h1 {
     background-color: white;
     color: #333;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
+/* Initial State: Front is visible, Back is hidden */
 .card-front {
-    /* Front is normal */
+    opacity: 1;
+    z-index: 2;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
+.card-back {
+    opacity: 0;
+    z-index: 1;
+    transform: scale(0.95); /* Slight zoom effect instead of 3D flip */
+    pointer-events: none;
+    padding: 20px;
+    justify-content: space-between;
+}
+
+/* Flipped State: Front hides, Back shows */
+.card.flipped .card-front {
+    opacity: 0;
+    z-index: 1;
+    transform: scale(0.95);
+    pointer-events: none;
+}
+
+.card.flipped .card-back {
+    opacity: 1;
+    z-index: 2;
+    transform: scale(1);
+    pointer-events: auto;
 }
 
 .card-front p {
     font-size: 1.6rem;
     font-weight: 700;
     line-height: 1.4;
-}
-
-/* The back face is pre-rotated so it shows correctly when the .card flips 180deg */
-.card-back {
-    transform: rotateY(180deg);
-    padding: 20px;
-    justify-content: space-between;
 }
 
 .card-back h2 {
@@ -262,6 +277,7 @@ h1 {
     width: 80px;
     height: 80px;
     margin-bottom: 10px;
+    transition: opacity 0.3s ease;
 }
 
 .timer-svg {
