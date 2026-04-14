@@ -50,7 +50,7 @@ function playSound(type) {
     gainNode.connect(audioCtx.destination);
     
     if (type === 'correct') {
-        // Joyous "Ding" (Positive SFX)
+        // Joyous "Ding"
         osc.type = 'sine';
         osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
         osc.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); // C#6
@@ -60,7 +60,7 @@ function playSound(type) {
         osc.start(audioCtx.currentTime);
         osc.stop(audioCtx.currentTime + 0.5);
     } else {
-        // Dull "Thud" (Negative/Mat SFX)
+        // Dull "Thud"
         osc.type = 'square';
         osc.frequency.setValueAtTime(150, audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.2);
@@ -83,10 +83,10 @@ const UI = {
     statementText: document.getElementById('statement-text'),
     resultTitle: document.getElementById('result-title'),
     explanationText: document.getElementById('explanation-text'),
-    timerContainer: document.querySelector('.timer-container'),
+    timerContainer: document.getElementById('timer-container'),
     timerText: document.getElementById('timer-text'),
     timerProgress: document.querySelector('.timer-progress'),
-    actions: document.querySelector('.actions'),
+    actions: document.getElementById('actions-container'),
     nextBtn: document.getElementById('next-btn'),
     endTitle: document.getElementById('end-title'),
     endMessage: document.getElementById('end-message'),
@@ -115,18 +115,22 @@ function initGame() {
 function loadQuestion() {
     isAnswered = false;
     
-    // Fade out the explanation and fade in the new question
+    // Flip the card back to the front
     UI.card.classList.remove('flipped');
     
-    // Wait for fade transition before swapping text
+    // Wait for the physical flip animation (0.6s) to finish before changing text
     setTimeout(() => {
         const q = questions[currentQuestionIndex];
         UI.statementText.textContent = `"${q.statement}"`;
-        UI.actions.style.display = 'flex';
+        
+        // Show buttons and timer again
+        UI.actions.style.visibility = 'visible';
         UI.actions.style.opacity = '1';
+        UI.timerContainer.style.visibility = 'visible';
         UI.timerContainer.style.opacity = '1';
+        
         startTimer();
-    }, 400); 
+    }, 600); 
 }
 
 function startTimer() {
@@ -154,15 +158,11 @@ function handleAnswer(guess) {
     isAnswered = true;
     clearInterval(timer);
     
-    // Hide buttons and timer smoothly
-    UI.actions.style.opacity = '0';
-    UI.timerContainer.style.opacity = '0';
-    setTimeout(() => {
-        UI.actions.style.display = 'none';
-    }, 300);
+    // Hide Truth/Shadow buttons and timer completely
+    UI.actions.style.visibility = 'hidden';
+    UI.timerContainer.style.visibility = 'hidden';
 
     const q = questions[currentQuestionIndex];
-    
     let isCorrect = (guess === q.isTrue);
     if (guess === null) isCorrect = false; 
     
@@ -183,7 +183,7 @@ function handleAnswer(guess) {
     
     UI.explanationText.textContent = q.explanation;
     
-    // Fade out the question and fade in the explanation
+    // Trigger the physical 3D flip (the text is already rotated on the back, so it reads normally)
     UI.card.classList.add('flipped');
 }
 
@@ -191,12 +191,11 @@ function triggerFlash(isCorrect) {
     UI.flashOverlay.className = isCorrect ? 'flash-green' : 'flash-red';
     setTimeout(() => {
         UI.flashOverlay.className = '';
-    }, 400); // Overlay disappears after 400ms
+    }, 400);
 }
 
 function applyLevelTheme(level) {
-    // Cave of Plato Metaphor:
-    // Level 0: Pitch Black (#0a0212), Level 5: Kahoot Purple (#46178f), Level 10: White (#ffffff)
+    // Cave of Plato Metaphor: Level 0 (Black), Level 5 (Purple), Level 10 (White)
     let r, g, b;
     if (level <= 5) {
         const ratio = level / 5;
@@ -212,7 +211,6 @@ function applyLevelTheme(level) {
         g = Math.floor(23 + ratio * 232);   // 23 to 255
         b = Math.floor(143 + ratio * 112);  // 143 to 255
         
-        // At high levels (Truth), text color changes for readability
         if (level >= 8) {
             document.body.style.color = '#333';
             UI.timerProgress.style.stroke = '#333';
@@ -241,7 +239,7 @@ function processNextChallenge() {
     updateProgressionBar(currentLevel);
     applyLevelTheme(currentLevel);
     
-    // 3. Wait a moment so the user sees the consequence (level up/down) before showing the next question
+    // 3. Wait 1s so the user sees the level change BEFORE the next card loads
     setTimeout(() => {
         if (currentLevel >= maxLevel) {
             endGame(true);
@@ -250,17 +248,17 @@ function processNextChallenge() {
         } else {
             currentQuestionIndex++;
             if (currentQuestionIndex >= questions.length) {
-                currentQuestionIndex = 0; // Loop if dataset exhausted
+                currentQuestionIndex = 0;
                 questions = [...quizData].sort(() => Math.random() - 0.5);
             }
-            loadQuestion(); // Fades out explanation, fades in new question
+            loadQuestion(); // Triggers the physical flip back to the front
         }
-    }, 1000); // 1 second delay to absorb the color and level change
+    }, 1000); 
 }
 
 function endGame(won) {
     showScreen(UI.endScreen);
-    bgm.pause(); // Stop background music at the end
+    bgm.pause();
     
     if (won) {
         UI.endTitle.textContent = "Bravo, you have reached the Truth!";
@@ -289,7 +287,7 @@ document.getElementById('start-btn').addEventListener('click', initGame);
 document.getElementById('restart-btn').addEventListener('click', initGame);
 document.getElementById('home-btn').addEventListener('click', () => {
     clearInterval(timer);
-    document.body.style.backgroundColor = 'var(--kahoot-purple)'; // Reset to Kahoot purple
+    document.body.style.backgroundColor = 'var(--kahoot-purple)';
     document.body.style.color = 'white';
     showScreen(UI.startScreen);
     bgm.pause();

@@ -39,7 +39,7 @@
 
             <!-- Game Screen -->
             <section id="game-screen" class="screen">
-                <div class="timer-container">
+                <div class="timer-container" id="timer-container">
                     <svg class="timer-svg" viewBox="0 0 100 100">
                         <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
                         <circle class="timer-progress" cx="50" cy="50" r="45"></circle>
@@ -49,23 +49,24 @@
 
                 <div class="card-container">
                     <div id="card" class="card">
-                        <div class="card-inner">
-                            <div class="card-front">
-                                <p id="statement-text">Statement goes here...</p>
+                        <!-- FRONT OF CARD -->
+                        <div class="card-front">
+                            <p id="statement-text">Statement goes here...</p>
+                        </div>
+                        
+                        <!-- BACK OF CARD -->
+                        <div class="card-back">
+                            <h2 id="result-title">Feedback</h2>
+                            <div class="debriefing-box">
+                                <span class="debriefing-label">GEOPOLITICAL DEBRIEFING:</span>
+                                <p id="explanation-text">Explanation goes here...</p>
                             </div>
-                            <div class="card-back">
-                                <h2 id="result-title">Feedback</h2>
-                                <div class="debriefing-box">
-                                    <span class="debriefing-label">GEOPOLITICAL DEBRIEFING:</span>
-                                    <p id="explanation-text">Explanation goes here...</p>
-                                </div>
-                                <button id="next-btn" class="btn secondary">Next Question</button>
-                            </div>
+                            <button id="next-btn" class="btn secondary">Next Question</button>
                         </div>
                     </div>
                 </div>
 
-                <div class="actions">
+                <div class="actions" id="actions-container">
                     <button id="btn-shadow" class="btn shadow-btn">Shadow (Myth)</button>
                     <button id="btn-truth" class="btn truth-btn">Truth (Fact)</button>
                 </div>
