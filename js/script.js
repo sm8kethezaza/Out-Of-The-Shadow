@@ -43,7 +43,45 @@ function toggleMute() {
 function playSound(type) {
     if (isMuted || !audioCtx) return;
     
-    // Create new oscillator for sound effect
+    if (type === 'win') {
+        // Triumphant brass ascending scale
+        const notes = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5
+        notes.forEach((freq, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.value = freq;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.15);
+            gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + i * 0.15 + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.4);
+            osc.start(audioCtx.currentTime + i * 0.15);
+            osc.stop(audioCtx.currentTime + i * 0.15 + 0.45);
+        });
+        return;
+    } else if (type === 'lose') {
+        // Sad descending trombone
+        const notes = [311.13, 293.66, 277.18, 261.63]; // D#4, D4, C#4, C4
+        notes.forEach((freq, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            // Slight pitch bend down
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.4);
+            osc.frequency.exponentialRampToValueAtTime(freq * 0.9, audioCtx.currentTime + i * 0.4 + 0.3);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.4);
+            gain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + i * 0.4 + 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.4 + 0.4);
+            osc.start(audioCtx.currentTime + i * 0.4);
+            osc.stop(audioCtx.currentTime + i * 0.4 + 0.5);
+        });
+        return;
+    }
+
+    // Create new oscillator for regular sound effect
     const osc = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     
@@ -97,6 +135,11 @@ const UI = {
 };
 
 function initGame() {
+    isMuted = false;
+    document.getElementById('mute-btn').textContent = '🔊 Mute';
+    initAudio();
+    bgm.play().catch(e => console.log("Audio play blocked", e));
+
     // Shuffle the dataset
     questions = [...quizData].sort(() => Math.random() - 0.5);
     currentLevel = 3;
@@ -281,10 +324,13 @@ function processNextChallenge() {
 function endGame(won) {
     showScreen(UI.endScreen);
     bgm.pause();
-    isMuted = true;
-    document.getElementById('mute-btn').textContent = '🔇 Unmute';
+    
+    // We keep audio enabled just for the win/lose sound, then mute
+    const wasMuted = isMuted;
+    isMuted = false; // Force unmute briefly to ensure finale plays
     
     if (won) {
+        playSound('win');
         // Successful avatar out of the cave
         UI.endVisual.innerHTML = '<div class="win-icon">🌞🧗‍♂️✨</div>';
         UI.endTitle.textContent = "Bravo, you have reached the Truth!";
@@ -293,6 +339,7 @@ function endGame(won) {
         document.body.style.backgroundColor = 'var(--bg-light)';
         document.body.style.color = '#333';
     } else {
+        playSound('lose');
         // Loser avatar stuck in the cave
         UI.endVisual.innerHTML = '<div class="lose-icon">🕳️🙍‍♂️🌑</div>';
         UI.endTitle.textContent = "You have fallen into Ignorance...";
@@ -301,6 +348,10 @@ function endGame(won) {
         document.body.style.backgroundColor = 'var(--bg-dark)';
         document.body.style.color = 'white';
     }
+    
+    // Restore mute state for the UI, but sounds are already fired
+    isMuted = true;
+    document.getElementById('mute-btn').textContent = '🔇 Unmute';
 }
 
 function showScreen(screenEl) {
