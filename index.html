@@ -9,7 +9,6 @@
 </head>
 <body>
     <!-- Audio Elements -->
-    <!-- Lo-Fi/Chill background music (Wikimedia Commons - Kevin MacLeod, completely free and reliable) -->
     <audio id="bgm" loop preload="auto" src="https://upload.wikimedia.org/wikipedia/commons/b/b5/Bossa_Antigua.ogg"></audio>
 
     <div id="flash-overlay"></div>
@@ -18,72 +17,91 @@
         <header>
             <div class="header-buttons">
                 <button id="home-btn" class="icon-btn">🏠 Home</button>
-                <button id="mute-btn" class="icon-btn">🔊 Sound On</button>
+                <button id="mute-btn" class="icon-btn">🔇 Unmute</button>
             </div>
             <div id="progression-container">
-                <div id="progression-track">
+                <div id="progression-track-horizontal">
                     <div id="progression-bar">
                         <div id="progression-fill"></div>
                     </div>
-                    <div id="character-icon">🏃</div>
                 </div>
                 <div id="score-text">Level: 3/10</div>
             </div>
-            <div class="header-spacer"></div> <!-- Allows the grid to center the progression container perfectly -->
+            <div class="header-spacer"></div> 
         </header>
 
-        <main id="screens">
-            <!-- Start Screen -->
-            <section id="start-screen" class="screen active">
-                <h1>Out of the Shadow</h1>
-                <p>CPE 494: Digital Creativity & Rethinking Interaction.</p>
-                <p>Welcome to Plato's Cave. Can you distinguish geopolitical Truth from Media Myth?</p>
-                <button id="start-btn" class="btn primary">Enter the Cave</button>
-            </section>
-
-            <!-- Game Screen -->
-            <section id="game-screen" class="screen">
-                <div class="timer-container" id="timer-container">
-                    <svg class="timer-svg" viewBox="0 0 100 100">
-                        <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
-                        <circle class="timer-progress" cx="50" cy="50" r="45"></circle>
-                    </svg>
-                    <div id="timer-text">10</div>
+        <div id="main-content">
+            <!-- Nouvelle Fonctionnalité : L'Avatar de la Vérité -->
+            <aside id="sidebar">
+                <div id="vertical-track">
+                    <div class="sun-icon">🌞</div>
+                    <div id="track-line">
+                        <!-- Les 11 échelons (0 à 10) -->
+                        <div class="step-mark"></div><div class="step-mark"></div>
+                        <div class="step-mark"></div><div class="step-mark"></div>
+                        <div class="step-mark"></div><div class="step-mark"></div>
+                        <div class="step-mark"></div><div class="step-mark"></div>
+                        <div class="step-mark"></div><div class="step-mark"></div>
+                        <div class="step-mark"></div>
+                    </div>
+                    <div id="avatar" class="avatar-icon">🧗‍♂️</div>
+                    <div class="pit-icon">🌑</div>
                 </div>
+            </aside>
 
-                <div class="card-container">
-                    <div id="card" class="card">
-                        <!-- FRONT OF CARD -->
-                        <div class="card-front">
-                            <p id="statement-text">Statement goes here...</p>
-                        </div>
-                        
-                        <!-- BACK OF CARD -->
-                        <div class="card-back">
-                            <h2 id="result-title">Feedback</h2>
-                            <div class="debriefing-box">
-                                <span class="debriefing-label">GEOPOLITICAL DEBRIEFING:</span>
-                                <p id="explanation-text">Explanation goes here...</p>
+            <main id="screens">
+                <!-- Start Screen -->
+                <section id="start-screen" class="screen active">
+                    <h1>Out of the Shadow</h1>
+                    <p>CPE 494: Digital Creativity & Rethinking Interaction.</p>
+                    <p>Welcome to Plato's Cave. Can you distinguish geopolitical Truth from Media Myth?</p>
+                    <button id="start-btn" class="btn primary">Enter the Cave</button>
+                </section>
+
+                <!-- Game Screen -->
+                <section id="game-screen" class="screen">
+                    <div class="timer-container" id="timer-container">
+                        <svg class="timer-svg" viewBox="0 0 100 100">
+                            <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
+                            <circle class="timer-progress" cx="50" cy="50" r="45"></circle>
+                        </svg>
+                        <div id="timer-text">10</div>
+                    </div>
+
+                    <div class="card-container">
+                        <div id="card" class="card">
+                            <!-- FRONT OF CARD -->
+                            <div class="card-front">
+                                <p id="statement-text">Statement goes here...</p>
                             </div>
-                            <button id="next-btn" class="btn secondary">Next Question</button>
+                            
+                            <!-- BACK OF CARD -->
+                            <div class="card-back">
+                                <h2 id="result-title">Feedback</h2>
+                                <div class="debriefing-box">
+                                    <span class="debriefing-label">GEOPOLITICAL DEBRIEFING:</span>
+                                    <p id="explanation-text">Explanation goes here...</p>
+                                </div>
+                                <button id="next-btn" class="btn secondary">Next Question</button>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="actions" id="actions-container">
-                    <button id="btn-shadow" class="btn shadow-btn">Shadow (Myth)</button>
-                    <button id="btn-truth" class="btn truth-btn">Truth (Fact)</button>
-                </div>
-            </section>
+                    <div class="actions" id="actions-container">
+                        <button id="btn-shadow" class="btn shadow-btn">Shadow (Myth)</button>
+                        <button id="btn-truth" class="btn truth-btn">Truth (Fact)</button>
+                    </div>
+                </section>
 
-            <!-- End Screen -->
-            <section id="end-screen" class="screen">
-                <div id="end-visual"></div>
-                <h1 id="end-title">Game Over</h1>
-                <p id="end-message">Outcome message.</p>
-                <button id="restart-btn" class="btn primary">Play Again</button>
-            </section>
-        </main>
+                <!-- End Screen -->
+                <section id="end-screen" class="screen">
+                    <div id="end-visual"></div>
+                    <h1 id="end-title">Game Over</h1>
+                    <p id="end-message">Outcome message.</p>
+                    <button id="restart-btn" class="btn primary">Play Again</button>
+                </section>
+            </main>
+        </div>
     </div>
 
     <!-- Scripts -->

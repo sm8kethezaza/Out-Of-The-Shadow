@@ -11,7 +11,7 @@ let pendingLevelChange = 0;
 let questions = [];
 
 // Audio Setup - Lo-Fi BGM & SFX
-let isMuted = false;
+let isMuted = true; // Default state matching "Muted"
 const bgm = document.getElementById('bgm');
 bgm.volume = 0.4; // Chill volume
 
@@ -25,30 +25,18 @@ function initAudio() {
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
     }
-    
-    if (!isMuted) {
-        // Play BGM and handle potential browser autoplay blocks gracefully
-        let playPromise = bgm.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.log("Autoplay prevented. User needs to interact first.");
-                isMuted = true;
-                document.getElementById('mute-btn').textContent = '🔈 Sound Off';
-            });
-        }
-    }
 }
 
 function toggleMute() {
     isMuted = !isMuted;
     const muteBtn = document.getElementById('mute-btn');
     if (isMuted) {
-        muteBtn.textContent = '🔈 Sound Off';
+        muteBtn.textContent = '🔇 Unmute';
         bgm.pause();
     } else {
-        muteBtn.textContent = '🔊 Sound On';
+        muteBtn.textContent = '🔊 Mute';
         initAudio();
-        bgm.play();
+        bgm.play().catch(e => console.log("Audio play blocked", e));
     }
 }
 
@@ -91,7 +79,7 @@ const UI = {
     gameScreen: document.getElementById('game-screen'),
     endScreen: document.getElementById('end-screen'),
     progressionFill: document.getElementById('progression-fill'),
-    characterIcon: document.getElementById('character-icon'),
+    avatar: document.getElementById('avatar'),
     scoreText: document.getElementById('score-text'),
     card: document.getElementById('card'),
     statementText: document.getElementById('statement-text'),
@@ -109,9 +97,6 @@ const UI = {
 };
 
 function initGame() {
-    // Crucial: Initialize audio directly on user click
-    initAudio(); 
-    
     // Shuffle the dataset
     questions = [...quizData].sort(() => Math.random() - 0.5);
     currentLevel = 3;
@@ -243,18 +228,23 @@ function applyLevelTheme(level) {
 }
 
 function updateProgressionBar(newLevel, oldLevel) {
+    // 1. Horizontal Progress Bar (Header)
     const percentage = (newLevel / maxLevel) * 100;
     UI.progressionFill.style.width = `${percentage}%`;
     UI.scoreText.textContent = `Level: ${newLevel}/${maxLevel}`;
     
-    // Move Character Emoji along the track
-    UI.characterIcon.style.left = `${percentage}%`;
+    // 2. Vertical Avatar of Truth (Sidebar)
+    // The track is inside #track-line which has top:40px, bottom:40px.
+    // Calculate bottom percentage based on level.
+    UI.avatar.style.bottom = `calc(40px + ${percentage}% * (100% - 80px))`;
     
-    // Face character in the direction of movement (Right = Truth, Left = Ignorance)
+    // Face character slightly to show expression
     if (newLevel > oldLevel) {
-        UI.characterIcon.style.transform = 'translateX(-50%) scaleX(1)';
+        UI.avatar.textContent = '🧗‍♂️'; // Climbing up energetically
     } else if (newLevel < oldLevel) {
-        UI.characterIcon.style.transform = 'translateX(-50%) scaleX(-1)';
+        UI.avatar.textContent = '🤦‍♂️'; // Falling down/Facepalm
+    } else {
+        UI.avatar.textContent = '🧗‍♂️'; // Default
     }
 }
 
@@ -264,11 +254,11 @@ function processNextChallenge() {
     currentLevel += pendingLevelChange;
     pendingLevelChange = 0;
     
-    // 2. Visually update the UI (Character moving + Colors shifting)
+    // 2. Visually update the UI (Avatar climbing + Colors shifting)
     updateProgressionBar(currentLevel, oldLevel);
     applyLevelTheme(currentLevel);
     
-    // 3. Wait 1s so the user sees the character move BEFORE loading next card
+    // 3. Wait 1s so the user sees the avatar move BEFORE loading next card
     setTimeout(() => {
         if (currentLevel >= maxLevel) {
             endGame(true);
@@ -288,18 +278,20 @@ function processNextChallenge() {
 function endGame(won) {
     showScreen(UI.endScreen);
     bgm.pause();
+    isMuted = true;
+    document.getElementById('mute-btn').textContent = '🔇 Unmute';
     
     if (won) {
-        // Successful character out of the cave
-        UI.endVisual.innerHTML = '<div class="win-icon">🌞🏃‍♂️💨</div>';
+        // Successful avatar out of the cave
+        UI.endVisual.innerHTML = '<div class="win-icon">🌞🧗‍♂️✨</div>';
         UI.endTitle.textContent = "Bravo, you have reached the Truth!";
         UI.endTitle.classList.add('win-anim');
         UI.endMessage.textContent = "You have successfully escaped the cave of disinformation and shattered the media myths.";
         document.body.style.backgroundColor = 'var(--bg-light)';
         document.body.style.color = '#333';
     } else {
-        // Loser character stuck in the cave
-        UI.endVisual.innerHTML = '<div class="lose-icon">🕸️🧎‍♂️🌑</div>';
+        // Loser avatar stuck in the cave
+        UI.endVisual.innerHTML = '<div class="lose-icon">🕳️🙍‍♂️🌑</div>';
         UI.endTitle.textContent = "You have fallen into Ignorance...";
         UI.endTitle.classList.add('lose-anim');
         UI.endMessage.textContent = "The shadows of geopolitical manipulation have clouded your judgment.";
@@ -325,7 +317,7 @@ document.getElementById('home-btn').addEventListener('click', () => {
     showScreen(UI.startScreen);
     bgm.pause();
     isMuted = true;
-    document.getElementById('mute-btn').textContent = '🔈 Sound Off';
+    document.getElementById('mute-btn').textContent = '🔇 Unmute';
 });
 document.getElementById('mute-btn').addEventListener('click', toggleMute);
 
