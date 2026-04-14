@@ -44,37 +44,37 @@ function playSound(type) {
     if (isMuted || !audioCtx) return;
     
     if (type === 'win') {
-        // Triumphant brass ascending scale
+        // Triumphant brass ascending scale (Trumpets)
         const notes = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5
         notes.forEach((freq, i) => {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = 'sawtooth';
+            osc.type = 'square';
             osc.frequency.value = freq;
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.15);
-            gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + i * 0.15 + 0.05);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.4);
-            osc.start(audioCtx.currentTime + i * 0.15);
-            osc.stop(audioCtx.currentTime + i * 0.15 + 0.45);
+            gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.2);
+            gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + i * 0.2 + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.2 + 0.6);
+            osc.start(audioCtx.currentTime + i * 0.2);
+            osc.stop(audioCtx.currentTime + i * 0.2 + 0.65);
         });
         return;
     } else if (type === 'lose') {
-        // Sad descending trombone
+        // Sad descending trombone (Defeat)
         const notes = [311.13, 293.66, 277.18, 261.63]; // D#4, D4, C#4, C4
         notes.forEach((freq, i) => {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'sawtooth';
-            // Slight pitch bend down
+            // Pitch bend down
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.4);
-            osc.frequency.exponentialRampToValueAtTime(freq * 0.9, audioCtx.currentTime + i * 0.4 + 0.3);
+            osc.frequency.exponentialRampToValueAtTime(freq * 0.85, audioCtx.currentTime + i * 0.4 + 0.35);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.4);
-            gain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + i * 0.4 + 0.1);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.4 + 0.4);
+            gain.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + i * 0.4 + 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.4 + 0.45);
             osc.start(audioCtx.currentTime + i * 0.4);
             osc.stop(audioCtx.currentTime + i * 0.4 + 0.5);
         });
