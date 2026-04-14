@@ -1,12 +1,12 @@
 // Game Settings
 const maxLevel = 10;
 const minLevel = 0;
-let currentLevel = 3; // Starts in the dark
+let currentLevel = 3; // Starts in the dark (level 3)
 let currentQuestionIndex = 0;
 let timer;
 let timeLeft = 10;
 let isAnswered = false;
-let pendingLevelChange = 0; // Stores the +1 or -1 until "Next Challenge" is clicked
+let pendingLevelChange = 0; // Stores the +1 or -1 until "Next Question" is clicked
 
 let questions = [];
 
@@ -50,7 +50,7 @@ function playSound(type) {
     gainNode.connect(audioCtx.destination);
     
     if (type === 'correct') {
-        // Joyous "Ding"
+        // Joyous "Ding" (Positive SFX)
         osc.type = 'sine';
         osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
         osc.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); // C#6
@@ -60,8 +60,8 @@ function playSound(type) {
         osc.start(audioCtx.currentTime);
         osc.stop(audioCtx.currentTime + 0.5);
     } else {
-        // Dull "Thud"
-        osc.type = 'triangle';
+        // Dull "Thud" (Negative/Mat SFX)
+        osc.type = 'square';
         osc.frequency.setValueAtTime(150, audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.2);
         gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
@@ -94,7 +94,7 @@ const UI = {
 
 function initGame() {
     initAudio();
-    // Shuffle the geopolitical dataset
+    // Shuffle the dataset
     questions = [...quizData].sort(() => Math.random() - 0.5);
     currentLevel = 3;
     currentQuestionIndex = 0;
@@ -103,7 +103,7 @@ function initGame() {
     // Reset animations
     UI.endTitle.classList.remove('win-anim', 'lose-anim');
     
-    // Set initial dark theme
+    // Apply Kahoot Purple theme initially or Cave theme
     applyLevelTheme(currentLevel);
     updateProgressionBar(currentLevel);
     
@@ -121,7 +121,7 @@ function loadQuestion() {
         UI.statementText.textContent = `"${q.statement}"`;
         UI.actions.style.display = 'flex';
         startTimer();
-    }, 300);
+    }, 400); // Wait until the card has flipped completely to face front
 }
 
 function startTimer() {
@@ -159,7 +159,7 @@ function handleAnswer(guess) {
     triggerFlash(isCorrect);
     playSound(isCorrect ? 'correct' : 'incorrect');
     
-    // Calculate pending level change, but DON'T apply it yet
+    // Calculate pending level change, but DON'T apply it to the UI yet (Pedagogy)
     pendingLevelChange = isCorrect ? 1 : -1;
     
     if (isCorrect) {
@@ -172,7 +172,7 @@ function handleAnswer(guess) {
     
     UI.explanationText.textContent = q.explanation;
     
-    // Show the back of the card with the debriefing
+    // Flip the card to show the explanation, text is pre-rotated to be readable
     UI.card.classList.add('flipped');
 }
 
@@ -184,8 +184,8 @@ function triggerFlash(isCorrect) {
 }
 
 function applyLevelTheme(level) {
-    // Background color transitioning metaphor (Cave of Plato)
-    // Level 0: Black (#0a0212), Level 5: Kahoot Purple (#46178f), Level 10: White (#ffffff)
+    // Cave of Plato Metaphor:
+    // Level 0: Pitch Black (#0a0212), Level 5: Kahoot Purple (#46178f), Level 10: White (#ffffff)
     let r, g, b;
     if (level <= 5) {
         const ratio = level / 5;
@@ -201,7 +201,7 @@ function applyLevelTheme(level) {
         g = Math.floor(23 + ratio * 232);   // 23 to 255
         b = Math.floor(143 + ratio * 112);  // 143 to 255
         
-        // At high levels, switch text color for readability
+        // At high levels (Truth), text color changes for readability
         if (level >= 8) {
             document.body.style.color = '#333';
             UI.timerProgress.style.stroke = '#333';
@@ -222,15 +222,15 @@ function updateProgressionBar(level) {
 }
 
 function processNextChallenge() {
-    // 1. Apply the level change NOW (after reading the explanation)
+    // 1. User clicked "Next Question", now we update the level (Cave progression)
     currentLevel += pendingLevelChange;
     pendingLevelChange = 0;
     
-    // 2. Visually update the progression bar and background theme
+    // 2. Visually update the UI (Bar + Colors)
     updateProgressionBar(currentLevel);
     applyLevelTheme(currentLevel);
     
-    // Wait a brief moment for the visual transition before checking win/loss
+    // 3. Wait a moment so the user sees the consequence (level up/down) before flipping
     setTimeout(() => {
         if (currentLevel >= maxLevel) {
             endGame(true);
@@ -239,17 +239,17 @@ function processNextChallenge() {
         } else {
             currentQuestionIndex++;
             if (currentQuestionIndex >= questions.length) {
-                currentQuestionIndex = 0; // Loop if needed
+                currentQuestionIndex = 0; // Loop if dataset exhausted
                 questions = [...quizData].sort(() => Math.random() - 0.5);
             }
             loadQuestion(); // Flips card back and loads new text
         }
-    }, 800); // 800ms delay lets the user see the background change
+    }, 1000); // 1 second delay to absorb the color and level change
 }
 
 function endGame(won) {
     showScreen(UI.endScreen);
-    bgm.pause(); // Stop lo-fi music at the end
+    bgm.pause(); // Stop background music at the end
     
     if (won) {
         UI.endTitle.textContent = "Bravo, you have reached the Truth!";
@@ -261,7 +261,7 @@ function endGame(won) {
         UI.endTitle.textContent = "You have fallen into Ignorance...";
         UI.endTitle.classList.add('lose-anim');
         UI.endMessage.textContent = "The shadows of geopolitical manipulation have clouded your judgment.";
-        document.body.style.backgroundColor = 'black';
+        document.body.style.backgroundColor = 'var(--bg-dark)';
         document.body.style.color = 'white';
     }
 }
@@ -278,7 +278,8 @@ document.getElementById('start-btn').addEventListener('click', initGame);
 document.getElementById('restart-btn').addEventListener('click', initGame);
 document.getElementById('home-btn').addEventListener('click', () => {
     clearInterval(timer);
-    applyLevelTheme(5); // Reset to generic purple for home
+    document.body.style.backgroundColor = 'var(--kahoot-purple)'; // Reset to Kahoot purple
+    document.body.style.color = 'white';
     showScreen(UI.startScreen);
     bgm.pause();
 });
@@ -288,5 +289,5 @@ document.getElementById('btn-truth').addEventListener('click', () => handleAnswe
 document.getElementById('btn-shadow').addEventListener('click', () => handleAnswer(false));
 UI.nextBtn.addEventListener('click', processNextChallenge);
 
-// Initial theme on page load
-applyLevelTheme(5);
+// Initial state
+document.body.style.backgroundColor = 'var(--kahoot-purple)';
