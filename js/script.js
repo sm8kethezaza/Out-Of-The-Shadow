@@ -6,20 +6,43 @@ let currentQuestionIndex = 0;
 let timer;
 let timeLeft = 10;
 let isAnswered = false;
+let pendingLevelChange = 0; // Stores the +1 or -1 until "Next Challenge" is clicked
 
 let questions = [];
 
-// Audio Context setup for immediate Web Audio feedback
+// Audio Setup
+let isMuted = true; // Start muted to comply with browser autoplay policies
+const bgm = document.getElementById('bgm');
+bgm.volume = 0.4;
+
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
 
 function initAudio() {
     if (!audioCtx) audioCtx = new AudioContext();
     if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    if (!isMuted) {
+        bgm.play().catch(e => console.log("Autoplay blocked for BGM"));
+    }
+}
+
+function toggleMute() {
+    isMuted = !isMuted;
+    const muteBtn = document.getElementById('mute-btn');
+    if (isMuted) {
+        muteBtn.textContent = '🔈 Muted';
+        bgm.pause();
+    } else {
+        muteBtn.textContent = '🔊 Unmute';
+        initAudio();
+        bgm.play();
+    }
 }
 
 function playSound(type) {
-    if (!audioCtx) return;
+    if (isMuted || !audioCtx) return;
+    
     const osc = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     
@@ -27,18 +50,22 @@ function playSound(type) {
     gainNode.connect(audioCtx.destination);
     
     if (type === 'correct') {
+        // Joyous "Ding"
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(600, audioCtx.currentTime); // High pitch
-        osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
-        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+        osc.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); // C#6
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
         osc.start(audioCtx.currentTime);
-        osc.stop(audioCtx.currentTime + 0.2);
+        osc.stop(audioCtx.currentTime + 0.5);
     } else {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(300, audioCtx.currentTime); // Low buzz
-        osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.2);
-        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        // Dull "Thud"
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.2);
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 0.02);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
         osc.start(audioCtx.currentTime);
         osc.stop(audioCtx.currentTime + 0.3);
@@ -71,13 +98,15 @@ function initGame() {
     questions = [...quizData].sort(() => Math.random() - 0.5);
     currentLevel = 3;
     currentQuestionIndex = 0;
+    pendingLevelChange = 0;
     
     // Reset animations
     UI.endTitle.classList.remove('win-anim', 'lose-anim');
-    document.body.style.backgroundColor = 'var(--bg-dark)';
-    document.body.style.color = 'white';
     
-    updateProgressionUI();
+    // Set initial dark theme
+    applyLevelTheme(currentLevel);
+    updateProgressionBar(currentLevel);
+    
     showScreen(UI.gameScreen);
     loadQuestion();
 }
@@ -130,20 +159,21 @@ function handleAnswer(guess) {
     triggerFlash(isCorrect);
     playSound(isCorrect ? 'correct' : 'incorrect');
     
+    // Calculate pending level change, but DON'T apply it yet
+    pendingLevelChange = isCorrect ? 1 : -1;
+    
     if (isCorrect) {
-        currentLevel++;
         UI.resultTitle.textContent = "Correct!";
         UI.resultTitle.style.color = "var(--kahoot-green)";
     } else {
-        currentLevel--;
         UI.resultTitle.textContent = guess === null ? "Time's Up!" : "Incorrect!";
         UI.resultTitle.style.color = "var(--kahoot-red)";
     }
     
     UI.explanationText.textContent = q.explanation;
-    UI.card.classList.add('flipped');
     
-    updateProgressionUI();
+    // Show the back of the card with the debriefing
+    UI.card.classList.add('flipped');
 }
 
 function triggerFlash(isCorrect) {
@@ -153,56 +183,74 @@ function triggerFlash(isCorrect) {
     }, 400); // Overlay disappears after 400ms
 }
 
-function updateProgressionUI() {
-    // Width percentage based on 0 to 10
-    const percentage = (currentLevel / maxLevel) * 100;
-    UI.progressionFill.style.width = `${percentage}%`;
-    UI.scoreText.textContent = `Level: ${currentLevel}/${maxLevel}`;
-    
+function applyLevelTheme(level) {
     // Background color transitioning metaphor (Cave of Plato)
-    // Level 0: Black (#000000), Level 5: Kahoot Purple (#46178f), Level 10: White (#ffffff)
+    // Level 0: Black (#0a0212), Level 5: Kahoot Purple (#46178f), Level 10: White (#ffffff)
     let r, g, b;
-    if (currentLevel <= 5) {
-        const ratio = currentLevel / 5;
-        r = Math.floor(ratio * 70);   // 0 to 70 (#46)
-        g = Math.floor(ratio * 23);   // 0 to 23 (#17)
-        b = Math.floor(ratio * 143);  // 0 to 143 (#8f)
+    if (level <= 5) {
+        const ratio = level / 5;
+        r = Math.floor(10 + ratio * 60);   // 10 to 70 (#46)
+        g = Math.floor(2 + ratio * 21);    // 2 to 23 (#17)
+        b = Math.floor(18 + ratio * 125);  // 18 to 143 (#8f)
         document.body.style.color = 'white';
         UI.timerProgress.style.stroke = 'var(--kahoot-yellow)';
         document.querySelector('.timer-bg').style.stroke = 'rgba(255,255,255,0.2)';
     } else {
-        const ratio = (currentLevel - 5) / 5;
+        const ratio = (level - 5) / 5;
         r = Math.floor(70 + ratio * 185);   // 70 to 255
         g = Math.floor(23 + ratio * 232);   // 23 to 255
         b = Math.floor(143 + ratio * 112);  // 143 to 255
         
         // At high levels, switch text color for readability
-        if (currentLevel >= 8) {
+        if (level >= 8) {
             document.body.style.color = '#333';
             UI.timerProgress.style.stroke = '#333';
             document.querySelector('.timer-bg').style.stroke = 'rgba(0,0,0,0.2)';
+        } else {
+            document.body.style.color = 'white';
+            UI.timerProgress.style.stroke = 'var(--kahoot-yellow)';
+            document.querySelector('.timer-bg').style.stroke = 'rgba(255,255,255,0.2)';
         }
     }
     document.body.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
 }
 
-function nextQuestion() {
-    if (currentLevel >= maxLevel) {
-        endGame(true);
-    } else if (currentLevel <= minLevel) {
-        endGame(false);
-    } else {
-        currentQuestionIndex++;
-        if (currentQuestionIndex >= questions.length) {
-            currentQuestionIndex = 0; // Loop if needed
-            questions = [...quizData].sort(() => Math.random() - 0.5);
+function updateProgressionBar(level) {
+    const percentage = (level / maxLevel) * 100;
+    UI.progressionFill.style.width = `${percentage}%`;
+    UI.scoreText.textContent = `Level: ${level}/${maxLevel}`;
+}
+
+function processNextChallenge() {
+    // 1. Apply the level change NOW (after reading the explanation)
+    currentLevel += pendingLevelChange;
+    pendingLevelChange = 0;
+    
+    // 2. Visually update the progression bar and background theme
+    updateProgressionBar(currentLevel);
+    applyLevelTheme(currentLevel);
+    
+    // Wait a brief moment for the visual transition before checking win/loss
+    setTimeout(() => {
+        if (currentLevel >= maxLevel) {
+            endGame(true);
+        } else if (currentLevel <= minLevel) {
+            endGame(false);
+        } else {
+            currentQuestionIndex++;
+            if (currentQuestionIndex >= questions.length) {
+                currentQuestionIndex = 0; // Loop if needed
+                questions = [...quizData].sort(() => Math.random() - 0.5);
+            }
+            loadQuestion(); // Flips card back and loads new text
         }
-        loadQuestion();
-    }
+    }, 800); // 800ms delay lets the user see the background change
 }
 
 function endGame(won) {
     showScreen(UI.endScreen);
+    bgm.pause(); // Stop lo-fi music at the end
+    
     if (won) {
         UI.endTitle.textContent = "Bravo, you have reached the Truth!";
         UI.endTitle.classList.add('win-anim');
@@ -230,10 +278,15 @@ document.getElementById('start-btn').addEventListener('click', initGame);
 document.getElementById('restart-btn').addEventListener('click', initGame);
 document.getElementById('home-btn').addEventListener('click', () => {
     clearInterval(timer);
-    document.body.style.backgroundColor = 'var(--kahoot-purple)'; // Reset to generic purple for home
-    document.body.style.color = 'white';
+    applyLevelTheme(5); // Reset to generic purple for home
     showScreen(UI.startScreen);
+    bgm.pause();
 });
+document.getElementById('mute-btn').addEventListener('click', toggleMute);
+
 document.getElementById('btn-truth').addEventListener('click', () => handleAnswer(true));
 document.getElementById('btn-shadow').addEventListener('click', () => handleAnswer(false));
-UI.nextBtn.addEventListener('click', nextQuestion);
+UI.nextBtn.addEventListener('click', processNextChallenge);
+
+// Initial theme on page load
+applyLevelTheme(5);

@@ -8,11 +8,18 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <!-- Audio Elements -->
+    <!-- Lo-Fi background music (Royalty Free URL) -->
+    <audio id="bgm" loop preload="auto" src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf7f6.mp3"></audio>
+
     <div id="flash-overlay"></div>
     
     <div id="app">
         <header>
-            <button id="home-btn" class="icon-btn">🏠 Home/Settings</button>
+            <div class="header-buttons">
+                <button id="home-btn" class="icon-btn">🏠 Home</button>
+                <button id="mute-btn" class="icon-btn">🔈 Muted</button>
+            </div>
             <div id="progression-container">
                 <div id="progression-bar">
                     <div id="progression-fill"></div>

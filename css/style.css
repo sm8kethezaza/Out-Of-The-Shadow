@@ -14,7 +14,7 @@ body {
     font-family: 'Montserrat', sans-serif;
     background-color: var(--bg-dark); /* Starts dark, updated via JS */
     color: white;
-    transition: background-color 1s ease, color 1s ease;
+    transition: background-color 1.5s ease-in-out, color 1.5s ease-in-out;
     overflow: hidden;
 }
 
@@ -43,7 +43,7 @@ body {
 .flash-green { background-color: rgba(38, 137, 12, 0.6); opacity: 1 !important; }
 .flash-red { background-color: rgba(226, 27, 60, 0.6); opacity: 1 !important; }
 
-/* Header & Home Button */
+/* Header & Buttons */
 header {
     padding: 20px;
     display: flex;
@@ -52,6 +52,11 @@ header {
     width: 100%;
     box-sizing: border-box;
     z-index: 10;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 10px;
 }
 
 .icon-btn {
@@ -75,7 +80,7 @@ header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-right: 120px; /* Balance the Home button width */
+    margin-right: 180px; /* Balance the Home/Mute buttons width */
 }
 
 #progression-bar {
@@ -94,7 +99,7 @@ header {
     height: 100%;
     width: 30%; /* Starts at level 3/10 */
     background: linear-gradient(90deg, var(--kahoot-purple), var(--kahoot-light-purple), #e0b0ff);
-    transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.5s;
+    transition: width 1s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 1s;
     box-shadow: 2px 0 5px rgba(0,0,0,0.2);
 }
 
@@ -162,7 +167,7 @@ h1 {
 
 /* Cards & Debriefing */
 .card-container {
-    perspective: 1000px;
+    perspective: 1500px; /* Increased for better 3D effect */
     width: 90%;
     max-width: 700px;
     height: 400px;
@@ -173,7 +178,7 @@ h1 {
     width: 100%;
     height: 100%;
     position: relative;
-    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transition: transform 0.8s cubic-bezier(0.4, 0.2, 0.2, 1);
     transform-style: preserve-3d;
 }
 
@@ -185,7 +190,8 @@ h1 {
     position: absolute;
     width: 100%;
     height: 100%;
-    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden; /* Fix for Safari/Chrome mirroring */
+    backface-visibility: hidden;         /* Fix for standard mirroring */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -205,7 +211,7 @@ h1 {
 }
 
 .card-back {
-    transform: rotateY(180deg);
+    transform: rotateY(180deg); /* This ensures the back content is NOT mirrored when the card flips */
     padding: 20px;
     justify-content: space-between;
 }
@@ -223,6 +229,8 @@ h1 {
     width: 100%;
     box-sizing: border-box;
     text-align: left;
+    overflow-y: auto;
+    max-height: 200px; /* In case the text is long */
 }
 
 .debriefing-label {
@@ -266,7 +274,7 @@ h1 {
     fill: none;
     stroke: var(--kahoot-yellow);
     stroke-width: 8;
-    stroke-dasharray: 283; /* 2 * pi * 45 */
+    stroke-dasharray: 283;
     stroke-dashoffset: 0;
     transition: stroke-dashoffset 1s linear, stroke 1s ease;
 }
