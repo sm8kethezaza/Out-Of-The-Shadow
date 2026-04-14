@@ -236,7 +236,8 @@ function updateProgressionBar(newLevel, oldLevel) {
     // 2. Vertical Avatar of Truth (Sidebar)
     // The track is inside #track-line which has top:40px, bottom:40px.
     // Calculate bottom percentage based on level.
-    UI.avatar.style.bottom = `calc(40px + ${percentage}% * (100% - 80px))`;
+    const ratio = newLevel / maxLevel;
+    UI.avatar.style.bottom = `calc(40px + ${ratio} * (100% - 80px))`;
     
     // Face character slightly to show expression
     if (newLevel > oldLevel) {
