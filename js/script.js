@@ -6,24 +6,36 @@ let currentQuestionIndex = 0;
 let timer;
 let timeLeft = 10;
 let isAnswered = false;
-let pendingLevelChange = 0; // Stores the +1 or -1 until "Next Question" is clicked
+let pendingLevelChange = 0;
 
 let questions = [];
 
-// Audio Setup
-let isMuted = true; // Start muted to comply with browser autoplay policies
+// Audio Setup - Lo-Fi BGM & SFX
+let isMuted = false;
 const bgm = document.getElementById('bgm');
-bgm.volume = 0.4;
+bgm.volume = 0.4; // Chill volume
 
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
 
 function initAudio() {
-    if (!audioCtx) audioCtx = new AudioContext();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (!audioCtx) {
+        audioCtx = new AudioContext();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
     
     if (!isMuted) {
-        bgm.play().catch(e => console.log("Autoplay blocked for BGM"));
+        // Play BGM and handle potential browser autoplay blocks gracefully
+        let playPromise = bgm.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.log("Autoplay prevented. User needs to interact first.");
+                isMuted = true;
+                document.getElementById('mute-btn').textContent = '🔈 Sound Off';
+            });
+        }
     }
 }
 
@@ -31,10 +43,10 @@ function toggleMute() {
     isMuted = !isMuted;
     const muteBtn = document.getElementById('mute-btn');
     if (isMuted) {
-        muteBtn.textContent = '🔈 Muted';
+        muteBtn.textContent = '🔈 Sound Off';
         bgm.pause();
     } else {
-        muteBtn.textContent = '🔊 Unmute';
+        muteBtn.textContent = '🔊 Sound On';
         initAudio();
         bgm.play();
     }
@@ -43,6 +55,7 @@ function toggleMute() {
 function playSound(type) {
     if (isMuted || !audioCtx) return;
     
+    // Create new oscillator for sound effect
     const osc = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     
@@ -78,6 +91,7 @@ const UI = {
     gameScreen: document.getElementById('game-screen'),
     endScreen: document.getElementById('end-screen'),
     progressionFill: document.getElementById('progression-fill'),
+    characterIcon: document.getElementById('character-icon'),
     scoreText: document.getElementById('score-text'),
     card: document.getElementById('card'),
     statementText: document.getElementById('statement-text'),
@@ -90,11 +104,14 @@ const UI = {
     nextBtn: document.getElementById('next-btn'),
     endTitle: document.getElementById('end-title'),
     endMessage: document.getElementById('end-message'),
+    endVisual: document.getElementById('end-visual'),
     flashOverlay: document.getElementById('flash-overlay')
 };
 
 function initGame() {
-    initAudio();
+    // Crucial: Initialize audio directly on user click
+    initAudio(); 
+    
     // Shuffle the dataset
     questions = [...quizData].sort(() => Math.random() - 0.5);
     currentLevel = 3;
@@ -103,10 +120,11 @@ function initGame() {
     
     // Reset animations
     UI.endTitle.classList.remove('win-anim', 'lose-anim');
+    UI.endVisual.innerHTML = '';
     
-    // Apply Cave theme
+    // Apply initial Cave theme and progress
     applyLevelTheme(currentLevel);
-    updateProgressionBar(currentLevel);
+    updateProgressionBar(currentLevel, currentLevel);
     
     showScreen(UI.gameScreen);
     loadQuestion();
@@ -115,10 +133,10 @@ function initGame() {
 function loadQuestion() {
     isAnswered = false;
     
-    // Flip the card back to the front
+    // Fade card back to the Front
     UI.card.classList.remove('flipped');
     
-    // Wait for the physical flip animation (0.6s) to finish before changing text
+    // Wait for the fade transition (0.4s) to finish before changing text
     setTimeout(() => {
         const q = questions[currentQuestionIndex];
         UI.statementText.textContent = `"${q.statement}"`;
@@ -130,7 +148,7 @@ function loadQuestion() {
         UI.timerContainer.style.opacity = '1';
         
         startTimer();
-    }, 600); 
+    }, 400); 
 }
 
 function startTimer() {
@@ -183,7 +201,7 @@ function handleAnswer(guess) {
     
     UI.explanationText.textContent = q.explanation;
     
-    // Trigger the physical 3D flip (the text is already rotated on the back, so it reads normally)
+    // Trigger fade to explanation
     UI.card.classList.add('flipped');
 }
 
@@ -224,22 +242,33 @@ function applyLevelTheme(level) {
     document.body.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
 }
 
-function updateProgressionBar(level) {
-    const percentage = (level / maxLevel) * 100;
+function updateProgressionBar(newLevel, oldLevel) {
+    const percentage = (newLevel / maxLevel) * 100;
     UI.progressionFill.style.width = `${percentage}%`;
-    UI.scoreText.textContent = `Level: ${level}/${maxLevel}`;
+    UI.scoreText.textContent = `Level: ${newLevel}/${maxLevel}`;
+    
+    // Move Character Emoji along the track
+    UI.characterIcon.style.left = `${percentage}%`;
+    
+    // Face character in the direction of movement (Right = Truth, Left = Ignorance)
+    if (newLevel > oldLevel) {
+        UI.characterIcon.style.transform = 'translateX(-50%) scaleX(1)';
+    } else if (newLevel < oldLevel) {
+        UI.characterIcon.style.transform = 'translateX(-50%) scaleX(-1)';
+    }
 }
 
 function processNextChallenge() {
+    const oldLevel = currentLevel;
     // 1. User clicked "Next Question", update the level
     currentLevel += pendingLevelChange;
     pendingLevelChange = 0;
     
-    // 2. Visually update the UI (Bar + Colors)
-    updateProgressionBar(currentLevel);
+    // 2. Visually update the UI (Character moving + Colors shifting)
+    updateProgressionBar(currentLevel, oldLevel);
     applyLevelTheme(currentLevel);
     
-    // 3. Wait 1s so the user sees the level change BEFORE the next card loads
+    // 3. Wait 1s so the user sees the character move BEFORE loading next card
     setTimeout(() => {
         if (currentLevel >= maxLevel) {
             endGame(true);
@@ -251,7 +280,7 @@ function processNextChallenge() {
                 currentQuestionIndex = 0;
                 questions = [...quizData].sort(() => Math.random() - 0.5);
             }
-            loadQuestion(); // Triggers the physical flip back to the front
+            loadQuestion(); // Fades back to the front
         }
     }, 1000); 
 }
@@ -261,12 +290,16 @@ function endGame(won) {
     bgm.pause();
     
     if (won) {
+        // Successful character out of the cave
+        UI.endVisual.innerHTML = '<div class="win-icon">🌞🏃‍♂️💨</div>';
         UI.endTitle.textContent = "Bravo, you have reached the Truth!";
         UI.endTitle.classList.add('win-anim');
         UI.endMessage.textContent = "You have successfully escaped the cave of disinformation and shattered the media myths.";
         document.body.style.backgroundColor = 'var(--bg-light)';
         document.body.style.color = '#333';
     } else {
+        // Loser character stuck in the cave
+        UI.endVisual.innerHTML = '<div class="lose-icon">🕸️🧎‍♂️🌑</div>';
         UI.endTitle.textContent = "You have fallen into Ignorance...";
         UI.endTitle.classList.add('lose-anim');
         UI.endMessage.textContent = "The shadows of geopolitical manipulation have clouded your judgment.";
@@ -291,6 +324,8 @@ document.getElementById('home-btn').addEventListener('click', () => {
     document.body.style.color = 'white';
     showScreen(UI.startScreen);
     bgm.pause();
+    isMuted = true;
+    document.getElementById('mute-btn').textContent = '🔈 Sound Off';
 });
 document.getElementById('mute-btn').addEventListener('click', toggleMute);
 

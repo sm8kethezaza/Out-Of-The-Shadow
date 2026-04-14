@@ -9,8 +9,8 @@
 </head>
 <body>
     <!-- Audio Elements -->
-    <!-- Lo-Fi background music (Royalty Free URL) -->
-    <audio id="bgm" loop preload="auto" src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf7f6.mp3"></audio>
+    <!-- Lo-Fi/Chill background music (Wikimedia Commons - Kevin MacLeod, completely free and reliable) -->
+    <audio id="bgm" loop preload="auto" src="https://upload.wikimedia.org/wikipedia/commons/b/b5/Bossa_Antigua.ogg"></audio>
 
     <div id="flash-overlay"></div>
     
@@ -18,14 +18,18 @@
         <header>
             <div class="header-buttons">
                 <button id="home-btn" class="icon-btn">🏠 Home</button>
-                <button id="mute-btn" class="icon-btn">🔈 Muted</button>
+                <button id="mute-btn" class="icon-btn">🔊 Sound On</button>
             </div>
             <div id="progression-container">
-                <div id="progression-bar">
-                    <div id="progression-fill"></div>
+                <div id="progression-track">
+                    <div id="progression-bar">
+                        <div id="progression-fill"></div>
+                    </div>
+                    <div id="character-icon">🏃</div>
                 </div>
                 <div id="score-text">Level: 3/10</div>
             </div>
+            <div class="header-spacer"></div> <!-- Allows the grid to center the progression container perfectly -->
         </header>
 
         <main id="screens">
@@ -74,6 +78,7 @@
 
             <!-- End Screen -->
             <section id="end-screen" class="screen">
+                <div id="end-visual"></div>
                 <h1 id="end-title">Game Over</h1>
                 <p id="end-message">Outcome message.</p>
                 <button id="restart-btn" class="btn primary">Play Again</button>
